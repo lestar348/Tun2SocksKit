@@ -18,7 +18,7 @@ let package = Package(
   targets: [
     .target(
         name: "Tun2SocksKit",
-        dependencies: ["HevSocks5Tunnel"]
+        dependencies: ["HevSocks5Tunnel", "Tun2SocksKitC"]
     ),
     .target(
         name: "Tun2SocksKitC",
@@ -26,8 +26,7 @@ let package = Package(
     ),
     .binaryTarget(
         name: "HevSocks5Tunnel",
-        url: "https://github.com/EbrahimTahernejad/Tun2SocksKit/releases/download/3.0.9/HevSocks5Tunnel.xcframework.zip",
-        checksum: "b3200b19867ac08d27487fb37eccf2854c96b48768797ff4b1910dae36a75b0c"
+        path: "HevSocks5Tunnel.xcframework"
     )
   ]
 )

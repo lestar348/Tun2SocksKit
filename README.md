@@ -1,7 +1,5 @@
 # Tun2SocksKit
 
-
-
 This repository is a wrapper and a build workflow for [hev-socks5-tunnel](https://github.com/heiher/hev-socks5-tunnel)
 
 
@@ -9,7 +7,7 @@ This repository is a wrapper and a build workflow for [hev-socks5-tunnel](https:
 ```swift
 import Tun2SocksKit
 
-Socks5Tunnel.run(withFileDescriptor: 4, configFilePath: localConfigFileURL.path(percentEncoded: false))
+Socks5Tunnel.run(withConfig: localConfigFileURL.path(percentEncoded: false), completionHandler: {code in  NSLog("HEV_SOCKS5_TUNNEL_MAIN: \(code)")})
 ```
 
 ### Config
