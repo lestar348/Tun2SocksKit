@@ -3,6 +3,9 @@ import HevSocks5Tunnel
 import Tun2SocksKitC
 
 public enum Socks5Tunnel {
+    private static var workQueue: DispatchQueue {
+        return DispatchQueue(label: "Socks5TunnelWorkQueue")
+    }
     
     private static var tunnelFileDescriptor: Int32? {
         var ctlInfo = ctl_info()
@@ -11,7 +14,7 @@ public enum Socks5Tunnel {
                 _ = strcpy($0, "com.apple.net.utun_control")
             }
         }
-        for fd: Int32 in 0...1024 {
+        for fd: Int32 in 0 ... 1024 {
             var addr = sockaddr_ctl()
             var ret: Int32 = -1
             var len = socklen_t(MemoryLayout.size(ofValue: addr))
@@ -37,7 +40,7 @@ public enum Socks5Tunnel {
     }
     
     private static var interfaceName: String? {
-        guard let tunnelFileDescriptor = self.tunnelFileDescriptor else {
+        guard let tunnelFileDescriptor = tunnelFileDescriptor else {
             return nil
         }
         var buffer = [UInt8](repeating: 0, count: Int(IFNAMSIZ))
@@ -62,17 +65,19 @@ public enum Socks5Tunnel {
     }
     
     public static func run(withConfig filePath: String, completionHandler: @escaping (Int32) -> ()) {
-        guard let fileDescriptor = self.tunnelFileDescriptor else {
+        guard let fileDescriptor = tunnelFileDescriptor else {
             fatalError("Get tunnel file descriptor failed.")
         }
         
-        DispatchQueue.global(qos: .userInitiated).async { [completionHandler] () in
+        workQueue.async { [completionHandler] () in
             let code = hev_socks5_tunnel_main(filePath.cString(using: .utf8), fileDescriptor)
             completionHandler(code)
         }
     }
     
     public static func quit() {
-        hev_socks5_tunnel_quit()
+        workQueue.async {
+            hev_socks5_tunnel_quit()
+        }
     }
 }
