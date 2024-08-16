@@ -1,7 +1,8 @@
 #ifndef Tun2SocksKitC_H
 #define Tun2SocksKitC_H
 
-#include <stdint.h>
+#include <stdint.h>    // For uint32_t, uint16_t
+#include <sys/types.h> // For u_int32_t, u_int16_t, u_char
 
 #define CTLIOCGINFO 0xc0644e03UL
 
@@ -9,6 +10,7 @@ struct ctl_info {
     u_int32_t   ctl_id;
     char        ctl_name[96];
 };
+
 struct sockaddr_ctl {
     u_char      sc_len;
     u_char      sc_family;
