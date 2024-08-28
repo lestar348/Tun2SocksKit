@@ -1,8 +1,24 @@
 import Foundation
-import HevSocks5Tunnel
 import Tun2SocksKitC
+import HevSocks5Tunnel
 
 public enum Socks5Tunnel {
+
+    public enum Config {
+        case file(path: URL)
+        case string(content: String)
+    }
+
+    public struct Stats {
+        public struct Stat {
+            public let packets: Int
+            public let bytes: Int
+        }
+        
+        public let up: Stat
+        public let down: Stat
+    }
+
     private static var tunnelFileDescriptor: Int32? {
         var ctlInfo = ctl_info()
         withUnsafeMutablePointer(to: &ctlInfo.ctl_name) {
@@ -10,7 +26,7 @@ public enum Socks5Tunnel {
                 _ = strcpy($0, "com.apple.net.utun_control")
             }
         }
-        for fd: Int32 in 0 ... 1024 {
+        for fd: Int32 in 0...1024 {
             var addr = sockaddr_ctl()
             var ret: Int32 = -1
             var len = socklen_t(MemoryLayout.size(ofValue: addr))
@@ -35,39 +51,37 @@ public enum Socks5Tunnel {
         return nil
     }
     
-    private static var interfaceName: String? {
-        guard let tunnelFileDescriptor = tunnelFileDescriptor else {
-            return nil
+    public static func run(withConfig config: Config, completionHandler: @escaping (Int32) -> ()) {
+        DispatchQueue.global(qos: .userInitiated).async { [completionHandler] () in
+            let code: Int32 = Socks5Tunnel.run(withConfig: config)
+            completionHandler(code)
         }
-        var buffer = [UInt8](repeating: 0, count: Int(IFNAMSIZ))
-        return buffer.withUnsafeMutableBufferPointer { mutableBufferPointer in
-            guard let baseAddress = mutableBufferPointer.baseAddress else {
-                return nil
-            }
-            var ifnameSize = socklen_t(IFNAMSIZ)
-            let result = getsockopt(
-                tunnelFileDescriptor,
-                2 /* SYSPROTO_CONTROL */,
-                2 /* UTUN_OPT_IFNAME */,
-                baseAddress,
-                &ifnameSize
-            )
-            if result == 0 {
-                return String(cString: baseAddress)
-            } else {
-                return nil
-            }
+    }
+
+    public static func run(withConfig config: Config) -> Int32 {
+        guard let fileDescriptor = tunnelFileDescriptor else {
+            return -1
+        }
+        switch config {
+        case .file(let path):
+            return hev_socks5_tunnel_main(path.path.cString(using: .utf8), fileDescriptor)
+        case .string(let content):
+            return hev_socks5_tunnel_main_from_str(content.cString(using: .utf8), UInt32(content.count), fileDescriptor)
         }
     }
     
-    @discardableResult
-    public static func run(withConfig filePath: String) -> Int32 {
-        guard let fileDescriptor = tunnelFileDescriptor else {
-            fatalError("Get tunnel file descriptor failed.")
-        }
-        return hev_socks5_tunnel_main(filePath.cString(using: .utf8), fileDescriptor)
+    public static var stats: Stats {
+        var tPackets: Int = 0
+        var tBytes: Int = 0
+        var rPackets: Int = 0
+        var rBytes: Int = 0
+        hev_socks5_tunnel_stats(&tPackets, &tBytes, &rPackets, &rBytes)
+        return Stats(
+            up: Stats.Stat(packets: tPackets, bytes: tBytes),
+            down: Stats.Stat(packets: rPackets, bytes: rBytes)
+        )
     }
-        
+    
     public static func quit() {
         hev_socks5_tunnel_quit()
     }

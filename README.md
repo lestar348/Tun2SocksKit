@@ -1,16 +1,53 @@
 # Tun2SocksKit
 
-This repository is a wrapper and a build workflow for [hev-socks5-tunnel](https://github.com/heiher/hev-socks5-tunnel), now with macos catalyst
 
+This repository is a wrapper and a build workflow for [hev-socks5-tunnel](https://github.com/heiher/hev-socks5-tunnel)
 
-### Usage
+## Original Developer ([arror](https://github.com/arror/))
+This code originally belonged to [arror](https://github.com/arror/). I'm just maintaining and updating it.
+
+If you appreciate this repo, give him a thanks.
+
+## Usage
+You only need to import `Tun2SocksKit`
 ```swift
 import Tun2SocksKit
-
-Socks5Tunnel.run(withConfig: localConfigFileURL.path(percentEncoded: false), completionHandler: {code in  NSLog("HEV_SOCKS5_TUNNEL_MAIN: \(code)")})
 ```
 
-### Config
+### Running Tun2SocksKit
+
+Use a file URL to run it
+```swift
+let code = Socks5Tunnel.run(withConfig: .file(path: localConfigFileURL))
+```
+
+Or the contents of the config file as a string
+```swift
+let code = Socks5Tunnel.run(withConfig: .string(content: stringConfigContent))
+```
+
+You can run it non-blocking as well
+```swift
+Socks5Tunnel.run(withConfig: .string(content: stringConfigContent)) { code in
+    // Do stuff with code
+}
+```
+
+### Stats
+To get stats you need to call
+```swift
+let stats = Socks5Tunnel.stats
+```
+
+Both packet count and bytes transmitted/received are provided
+```swift
+print(stats.up.packets)
+print(stats.up.bytes)
+print(stats.down.packets)
+print(stats.down.bytes)
+```
+
+## Config
 ```yml
 tunnel:
   mtu: 9000
